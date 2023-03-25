@@ -1,5 +1,5 @@
 {
-  "name": "debug-my-code",
+  "name": "debug-mys-code",
   "displayName": "Debug My Code",
   "description": "Executes only your code, skipping all previous code, without performance loss!",
   "version": "1.0.0",
@@ -16,6 +16,7 @@
   "activationEvents": [
     "onStartupFinished"
   ],
+  "icon": "images/icon.png",
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -65,13 +66,13 @@
     ]
   },
   "keywords": [
-    "debug my code",
-    "only my code",
-    "just my code",
-    "skip node modules",
-    "skip npm modules",
-    "skip files",
-    "skip dependencies"
+    "Debug my code",
+    "Only my code",
+    "Just my code",
+    "Skip node modules",
+    "Skip npm modules",
+    "Skip files",
+    "Skip dependencies"
   ],
   "scripts": {
     "vscode:prepublish": "yarn run compile",

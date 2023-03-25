@@ -17,7 +17,20 @@ And select the debugger you want to use this extension for.
 
 ![language](https://i.imgur.com/9IVibjY.png)
 
-Now, the extension will disable all exception breakpoints until the first breakpoint is hit, enable your configuration again and continue execution.
+Now, the extension will disable all exception breakpoints until the first breakpoint is hit, enable your exception breakpoint configuration again and continue execution.
+
+## Conditional exception breakpoints
+
+Conditional exception breakpoints allow you to make exception handling as granular as physically possible (they use the context of your application). The main drawback of conditional exception breakpoins is performance, as the debugger will have to evaluate a condition for every exception it encounters. This becomes a serious problem when debugging big NodeJS repos with a lot of dependenices to the point of making them unusable (more on the drawbacks below).
+
+Since this extension fully disables exception debugging until your code starts, you can use conditional breakpoints without the associated start-up performance penalty. 
+
+
+While running NodeJS projects, the debugger will occasionally jump into node modules when e exception breakpoint is enabled. We can change this by make the exception breakpoints conditional:
+
+![language](https://i.imgur.com/Ij9Z27w.png)
+
+
 
 # Motivation
 
@@ -47,7 +60,9 @@ Finally, add this condition to the exception breakpoints:
 
 ![example](https://i.imgur.com/Va261qp.png)
 
-This will work similar for any other language that supports global variables.
+This will work similar for any other language that supports global variables. If you have other identifiers other than "I want to start debugging here" to determine which exceptions you want to handle/skip, like the location of files or file extensions, you do not need to add a global variable. Simply use that condition.
+
+Conditional Breakpoints can be used in combination with this extension, allowing you to define complex conditions without the start-up performance penalty that comes with it.
 # Found an issue?
-Please create an issue on [GitHub](https://github.com/JeremyFunk/debug-my-code) or ask a question on the extensions page.
+Please create an issue on [GitHub](https://github.com/JeremyFunk/debug-my-code) or ask a question on the [extensions page](https://marketplace.visualstudio.com/items?itemName=JeremyFunk.debug-my-code).
 
