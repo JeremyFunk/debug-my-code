@@ -28,18 +28,26 @@
         "title": "Debug My Code: Enable extension"
       },
       {
-        "command": "debug-my-code.add-language",
-        "title": "Debug My Code: Add language"
-      },
-      {
-        "command": "debug-my-code.remove-language",
-        "title": "Debug My Code: Remove language"
-      },
-      {
-        "command": "debug-my-code.set-exception-breakpoints",
-        "title": "Debug My Code: Set exception breakpoints (all, uncaught, none)"
+        "command": "debug-my-code.language",
+        "title": "Debug My Code: Set enabled languages"
       }
     ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "debug-my-code.disable",
+          "when": "debug-my-code.enabled == true"
+        },
+        {
+          "command": "debug-my-code.enable",
+          "when": "debug-my-code.enabled == false"
+        },
+        {
+          "command": "debug-my-code.language",
+          "when": "debug-my-code.enabled == true"
+        }
+      ]
+    },
     "configuration": [
       {
         "title": "Is Debug-My-Code Config",
