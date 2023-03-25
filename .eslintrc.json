@@ -1,0 +1,21 @@
+{
+    "root": true,
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": { "project": "./tsconfig.json" },
+    "plugins": [
+        "@typescript-eslint"
+    ],
+    "rules": {
+        "@typescript-eslint/naming-convention": "off",
+        "curly": "warn",
+        "eqeqeq": "warn",
+        "no-throw-literal": "warn",
+        "semi": "off",
+        "@typescript-eslint/no-floating-promises": "warn"
+    },
+    "ignorePatterns": [
+        "out",
+        "dist",
+        "**/*.d.ts"
+    ]
+}
