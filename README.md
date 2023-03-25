@@ -1,71 +1,53 @@
-# debug-my-code README
+# Debug My Code
 
-This is the README for your extension "debug-my-code". After writing up a brief description, we recommend including the following sections.
+This extension disables exception debugging until your code starts. This prevents jumping into exceptions coming from node-modules or other dependencies. I developed this extension for Javascript/Typescript, but it *should* work just fine for other debuggers.
 
-## Features
+# Usage
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+After installing the extension you have to enable it. This has to be done for every VSCode workspace. 
+Open the command palette (Windows/Linux: Ctrl + Shift + P, MacOS: ⇧ + ⌘ + P) and enable the extension.
 
-For example if there is an image subfolder under your extension project workspace:
+![palette](https://i.imgur.com/pvanR88.png)
 
-\!\[feature X\]\(images/feature-x.png\)
+Next, select the languages you want to use this feature for. I exclusively tested it with the official VSCode NodeJS debugger, but there isn't a reason why it wouldn't work for other debuggers. 
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+![language](https://i.imgur.com/dqH0BQJ.png)
 
-## Requirements
+And select the debugger you want to use this extension for.
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+![language](https://i.imgur.com/9IVibjY.png)
 
-## Extension Settings
+Now, the extension will disable all exception breakpoints until the first breakpoint is hit, enable your configuration again and continue execution.
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+# Motivation
 
-For example:
+VSCode has multiple ways to achieve this behaviour, none of which are optimal. Here a brief overview in case one of these solutions suits your needs better than this extension.
 
-This extension contributes the following settings:
+## Skip Files
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+This defines a [glob](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options), that matches files that will be ignored. This has a high performance penalty in bigger repositories, [making the initial boot time significantly longer (in one of my projects from ~5s to over a 60s)](https://github.com/microsoft/vscode-js-debug/issues/1179). For every exception the glob pattern has to be matched, meaning that exception handling can't just be skipped by the debugger. [If you have a smaller number of dependencies, you might want to give it a try](https://code.visualstudio.com/docs/nodejs/nodejs-debugging#_additional-configuration).
 
-## Known Issues
+There are also edge cases where this simply does not work. Glob patterns also have some opaque limitations, that are very hard to figure out.
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+## Conditional Exception Breakpoints
 
-## Release Notes
+Same result as above, but with significantly less setup required. It has equal performance limitations. The downside is, that it requires 3 lines of code to live in your codebase (which might be a problem in a project with a high number of collaborators). It is also a weird workaround that might not always work. If you are using Typescript, you can use the following snippet to set it up for your codebase:
 
-Users appreciate release notes as you update your extension.
+```typescript
+declare global {
+  var finishedInitialization: boolean
+}
+```
+Paste the code in the same file as the entrypoint of your application. From the point in the code where you want to start debugging, write:
+```typescript
+globalThis.finishedInitialization = true
+```
 
-### 1.0.0
+Finally, add this condition to the exception breakpoints:
 
-Initial release of ...
+![example](https://i.imgur.com/Va261qp.png)
 
-### 1.0.1
+This will work similar for any other language that supports global variables.
+# Found an issue?
+Please create an issue on [GitHub](https://github.com/JeremyFunk/debug-my-code) or ask a question on the extensions page.
 
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
