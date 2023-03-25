@@ -4,7 +4,7 @@ interface DebuggerState {
     [language: string]: {
         [sessionId: string]: {
             hitBreakpoints: number
-			exceptionBreakpoints: string[] | null
+            exceptionBreakpoints: string[] | null
         }
     }
 }
@@ -19,28 +19,30 @@ type CTX = typeof CTX_ENABLED
 
 const CNF_ENABLED = 'enabled'
 const CNF_LANGUAGES = 'languages'
-type CNF = typeof CNF_ENABLED | typeof  CNF_LANGUAGES
+type CNF = typeof CNF_ENABLED | typeof CNF_LANGUAGES
 
-const getConfig = () => vscode.workspace.getConfiguration('debugMyCode')
+const getConfig = () => vscode.workspace.getConfiguration('debug-my-code')
 const getSubConfig = async (key: CNF, config?: vscode.WorkspaceConfiguration): Promise<any> => {
-	if(!config) {
-		return await vscode.workspace.getConfiguration('debugMyCode').get(key)
-	}
-	return await config.get(key)
+    if (!config) {
+        return await vscode.workspace.getConfiguration('debug-my-code').get(key)
+    }
+    return await config.get(key)
 }
 const setConfig = async (key: CNF, value: any, config?: vscode.WorkspaceConfiguration): Promise<void> => {
-	if(!config) {
-		return await vscode.workspace.getConfiguration('debugMyCode').update(key, value, vscode.ConfigurationTarget.Workspace)
-	}
-	return await config.update(key, value, vscode.ConfigurationTarget.Workspace)
+    if (!config) {
+        return await vscode.workspace
+            .getConfiguration('debug-my-code')
+            .update(key, value, vscode.ConfigurationTarget.Workspace)
+    }
+    return await config.update(key, value, vscode.ConfigurationTarget.Workspace)
 }
 
 const setContext = async (key: CTX, value: any) => {
-	await vscode.commands.executeCommand('setContext', key, value)
+    await vscode.commands.executeCommand('setContext', key, value)
 }
 
 const runCommand = async (command: CMD, args?: any) => {
-	return await vscode.commands.executeCommand(command, args)
+    return await vscode.commands.executeCommand(command, args)
 }
 
 interface DebugDisposables {
@@ -80,29 +82,30 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 
     async function createDebugAdapterTracker(session: vscode.DebugSession) {
-		const config = getConfig()
-		const enabled = await getSubConfig(CNF_ENABLED, config)
-		const languages = await getSubConfig(CNF_LANGUAGES, config) as string[]
+        const config = getConfig()
+        const enabled = await getSubConfig(CNF_ENABLED, config)
+        const languages = (await getSubConfig(CNF_LANGUAGES, config)) as string[]
 
-		if(!enabled || !languages.includes(session.configuration.type)) {
-			return
-		}
+        if (!enabled || !languages.includes(session.configuration.type)) {
+            return
+        }
 
-		if (!debugStates[session.configuration.type]) {
-			debugStates[session.configuration.type] = {}
-		}
+        if (!debugStates[session.configuration.type]) {
+            debugStates[session.configuration.type] = {}
+        }
 
         debugStates[session.configuration.type][session.id] = {
             hitBreakpoints: 0,
-			exceptionBreakpoints: null,
+            exceptionBreakpoints: null,
         }
 
         return {
             async onWillReceiveMessage(message: any) {
                 if (message.type === 'request' && message.command === 'setExceptionBreakpoints') {
-					if(!debugStates[session.configuration.type][session.id].exceptionBreakpoints) {
-						debugStates[session.configuration.type][session.id].exceptionBreakpoints = message.arguments.filterOptions
-					}
+                    if (!debugStates[session.configuration.type][session.id].exceptionBreakpoints) {
+                        debugStates[session.configuration.type][session.id].exceptionBreakpoints =
+                            message.arguments.filterOptions
+                    }
                 }
             },
             async onDidSendMessage(message: any) {
@@ -130,45 +133,45 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand(CMD_LANGUAGE, async () => {
-			const config = getConfig()
-            const currentLanguages = await getSubConfig(CNF_LANGUAGES, config) as string[]
+            const config = getConfig()
+            const currentLanguages = (await getSubConfig(CNF_LANGUAGES, config)) as string[]
             if (!currentLanguages) {
-				await setConfig(CNF_LANGUAGES, [], config)
+                await setConfig(CNF_LANGUAGES, [], config)
             }
 
             const selectedLanguage = await vscode.window.showQuickPick(
-                getAllDebugTypes().map((d) => currentLanguages.includes(d.detail) ? { ...d, picked: true } : d),
+                getAllDebugTypes().map((d) => (currentLanguages.includes(d.detail) ? { ...d, picked: true } : d)),
                 {
                     placeHolder: 'Select a language to add',
                     title: 'Select a language to add to Debug My Code.',
-					canPickMany: true,
+                    canPickMany: true,
                 },
             )
             if (!selectedLanguage) {
                 return
             }
 
-			currentLanguages.length = 0
+            currentLanguages.length = 0
             currentLanguages.push(...selectedLanguage.map((s) => s.detail))
-			await setConfig(CNF_LANGUAGES, currentLanguages, config)
+            await setConfig(CNF_LANGUAGES, currentLanguages, config)
 
-			const removedLanguages = debugDisposables.filter((d) => !currentLanguages.includes(d.l))
-			for (const s of removedLanguages) {
-				context.subscriptions.find((d) => d === s.d)?.dispose()
-				debugDisposables.splice(debugDisposables.indexOf(s), 1)
-			}
+            const removedLanguages = debugDisposables.filter((d) => !currentLanguages.includes(d.l))
+            for (const s of removedLanguages) {
+                context.subscriptions.find((d) => d === s.d)?.dispose()
+                debugDisposables.splice(debugDisposables.indexOf(s), 1)
+            }
 
-			const addedLanguages = selectedLanguage.filter((s) => !debugDisposables.find((d) => d.l === s.detail))
-			for (const s of addedLanguages) {
-				const provider = vscode.debug.registerDebugAdapterTrackerFactory(s.detail, {
-					createDebugAdapterTracker,
-				})
-				context.subscriptions.push(provider)
-				debugDisposables.push({
-					d: provider,
-					l: s.detail,
-				})
-			}
+            const addedLanguages = selectedLanguage.filter((s) => !debugDisposables.find((d) => d.l === s.detail))
+            for (const s of addedLanguages) {
+                const provider = vscode.debug.registerDebugAdapterTrackerFactory(s.detail, {
+                    createDebugAdapterTracker,
+                })
+                context.subscriptions.push(provider)
+                debugDisposables.push({
+                    d: provider,
+                    l: s.detail,
+                })
+            }
         }),
     )
 
@@ -176,21 +179,20 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand(CMD_DISABLE, async () => {
             const config = getConfig()
 
-			if(!await getSubConfig(CNF_ENABLED, config)) {
+            if (!(await getSubConfig(CNF_ENABLED, config))) {
+                if (debugDisposables.length === 0) {
+                    for (const s of debugDisposables) {
+                        context.subscriptions.find((d) => d === s.d)?.dispose()
+                    }
+                    debugDisposables = []
+                }
 
-				if(debugDisposables.length === 0) {
-					for (const s of debugDisposables) {
-						context.subscriptions.find((d) => d === s.d)?.dispose()
-					}
-					debugDisposables = []
-				}
+                await vscode.window.showInformationMessage('Debug My Code is already disabled.')
+                await setContext(CTX_ENABLED, false)
+                return
+            }
 
-				await vscode.window.showInformationMessage('Debug My Code is already disabled.')
-				await setContext(CTX_ENABLED, false)
-				return
-			}
-
-            const languages = await config.get('languages') as string[]
+            const languages = (await config.get('languages')) as string[]
             if (languages && languages.length > 1) {
                 const pick = await vscode.window.showQuickPick([
                     'Disable Debug My Code in this workspace',
@@ -201,66 +203,80 @@ export async function activate(context: vscode.ExtensionContext) {
                 }
 
                 if (pick === 'Disable Debug My Code for a specific language') {
-					return await runCommand(CMD_LANGUAGE)
+                    return await runCommand(CMD_LANGUAGE)
                 } else if (pick === 'Disable Debug My Code in this workspace') {
-					await setConfig(CNF_ENABLED, false, config)
+                    await setConfig(CNF_ENABLED, false, config)
                 }
             }
 
-			for (const s of debugDisposables) {
-				context.subscriptions.find((d) => d === s.d)?.dispose()
-			}
-			debugDisposables = []
+            for (const s of debugDisposables) {
+                context.subscriptions.find((d) => d === s.d)?.dispose()
+            }
+            debugDisposables = []
 
-			await setContext(CTX_ENABLED, false)
-			await setConfig(CNF_ENABLED, false, config)
+            await setContext(CTX_ENABLED, false)
+            await setConfig(CNF_ENABLED, false, config)
         }),
     )
 
     context.subscriptions.push(
         vscode.commands.registerCommand(CMD_ENABLE, async () => {
             const config = getConfig()
-			await setConfig(CNF_ENABLED, true, config)
-			await setContext(CTX_ENABLED, true)
+            await setConfig(CNF_ENABLED, true, config)
+            await setContext(CTX_ENABLED, true)
+
+			const languages = (await getSubConfig(CNF_LANGUAGES, config)) as string[]
+
+            for (const language of languages) {
+                const provider = vscode.debug.registerDebugAdapterTrackerFactory(language, {
+                    createDebugAdapterTracker,
+                })
+                context.subscriptions.push(provider)
+                debugDisposables.push({
+                    d: provider,
+                    l: language,
+                })
+            }
         }),
     )
 
-	{
-		const enabled = await getSubConfig(CNF_ENABLED)
-		await setContext(CTX_ENABLED, enabled)
+    {
+        const enabled = await getSubConfig(CNF_ENABLED)
+        await setContext(CTX_ENABLED, enabled)
 
-		if (!enabled) {
-			return
-		}
-	}
-
-    const languages = (await getSubConfig(CNF_LANGUAGES)) as string[]
-    if (!languages || !languages.length) {
-        const result = await vscode.window.showErrorMessage(
-            'Please configure the languages you want to use for Debug-My-Code in your VSCode settings JSON.',
-            'Add Language',
-            'Disable extension',
-        )
-
-        if (result === 'Add Language') {
-			await runCommand(CMD_LANGUAGE)
+        if (!enabled) {
+            return
         }
-
-        if (result === 'Disable extension') {
-			await runCommand(CMD_DISABLE)
-        }
-        return
     }
+    {
+        const languages = (await getSubConfig(CNF_LANGUAGES)) as string[]
+        if (!languages || !languages.length) {
+            const result = await vscode.window.showErrorMessage(
+                'Please configure the languages you want to use for Debug-My-Code in your VSCode settings JSON.',
+                'Add Language',
+                'Disable extension',
+            )
 
-    for (const language of languages) {
-        const provider = vscode.debug.registerDebugAdapterTrackerFactory(language, {
-			createDebugAdapterTracker,
-		})
-        context.subscriptions.push(provider)
-        debugDisposables.push({
-            d: provider,
-            l: language,
-        })
+            if (result === 'Add Language') {
+                await runCommand(CMD_LANGUAGE)
+            }
+
+            if (result === 'Disable extension') {
+                await runCommand(CMD_DISABLE)
+            }
+            return
+        }
+
+        for (const language of languages) {
+            const provider = vscode.debug.registerDebugAdapterTrackerFactory(language, {
+                createDebugAdapterTracker,
+            })
+            context.subscriptions.push(provider)
+            debugDisposables.push({
+                d: provider,
+                l: language,
+            })
+        }
     }
 }
 
