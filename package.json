@@ -34,6 +34,10 @@
       {
         "command": "debug-my-code.remove-language",
         "title": "Debug My Code: Remove language"
+      },
+      {
+        "command": "debug-my-code.set-exception-breakpoints",
+        "title": "Debug My Code: Set exception breakpoints (all, uncaught, none)"
       }
     ],
     "configuration": [
@@ -47,16 +51,6 @@
           "debug-my-code.languages": {
             "type": "array",
             "description": "Debug language. Only tested with node, but might work with any language that supports breakpoints, try your luck!"
-          },
-          "debug-my-code.exception-breakpoints": {
-            "type": "string",
-            "oneOf": [
-              "all",
-              "uncaught",
-              "none"
-            ],
-            "default": "uncaught",
-            "description": "The exception breakpoints to use. All will stop on all exceptions, uncaught will stop on uncaught exceptions, and none will not stop on exceptions."
           }
         }
       }

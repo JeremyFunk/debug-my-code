@@ -4,7 +4,7 @@ interface DebuggerState {
     [language: string]: {
         [sessionId: string]: {
             hitBreakpoints: number
-            initialized: boolean
+			exceptionBreakpoints: string[] | null
         }
     }
 }
@@ -45,19 +45,28 @@ export async function activate(context: vscode.ExtensionContext) {
         return Array.from(debugTypes)
     }
 
-    function createDebugAdapterTracker(session: vscode.DebugSession) {
+    async function createDebugAdapterTracker(session: vscode.DebugSession) {
+		const config = vscode.workspace.getConfiguration('debug-my-code')
+
+		if(!(await config.get('enabled') || !((await config.get('languages')) as string[]).includes(session.configuration.type))) {
+			return
+		}
+
 		if (!debugStates[session.configuration.type]) {
 			debugStates[session.configuration.type] = {}
 		}
 
         debugStates[session.configuration.type][session.id] = {
             hitBreakpoints: 0,
-            initialized: false,
+			exceptionBreakpoints: null,
         }
 
         return {
             async onWillReceiveMessage(message: any) {
                 if (message.type === 'request' && message.command === 'setExceptionBreakpoints') {
+					if(!debugStates[session.configuration.type][session.id].exceptionBreakpoints) {
+						debugStates[session.configuration.type][session.id].exceptionBreakpoints = message.arguments.filterOptions
+					}
                 }
             },
             async onDidSendMessage(message: any) {
@@ -72,8 +81,8 @@ export async function activate(context: vscode.ExtensionContext) {
                     debugStates[session.configuration.type][session.id].hitBreakpoints += 1
                     if (debugStates[session.configuration.type][session.id].hitBreakpoints === 1) {
                         await session.customRequest('setExceptionBreakpoints', {
-                            filters: ['all'],
-                            filterOptions: [],
+                            filters: [],
+                            filterOptions: debugStates[session.configuration.type][session.id].exceptionBreakpoints,
                         })
 
                         await session.customRequest('continue', {})
@@ -105,13 +114,13 @@ export async function activate(context: vscode.ExtensionContext) {
             currentLanguages.push(selectedLanguage.detail)
             await config.update('languages', currentLanguages, vscode.ConfigurationTarget.Workspace)
 
-            const provider = vscode.debug.registerDebugAdapterTrackerFactory(selectedLanguage, {
+            const provider = vscode.debug.registerDebugAdapterTrackerFactory(selectedLanguage.detail, {
                 createDebugAdapterTracker,
             })
             context.subscriptions.push(provider)
             debugDisposables.push({
                 d: provider,
-                l: selectedLanguage,
+                l: selectedLanguage.detail,
             })
         }),
     )
@@ -137,10 +146,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
             currentLanguages.splice(currentLanguages.indexOf(selectedLanguage), 1)
             await config.update('languages', currentLanguages, vscode.ConfigurationTarget.Workspace)
-            await vscode.window.showInformationMessage(`Language ${selectedLanguage} removed.`)
+            void vscode.window.showInformationMessage(`Language ${selectedLanguage.detail} removed.`)
 
-            const disposable = debugDisposables.find((d) => d.l === selectedLanguage)
+            const disposable = debugDisposables.find((d) => d.l === selectedLanguage.detail)
             if (disposable) {
+				const d = debugDisposables.find((d) => d.l === selectedLanguage.detail)
                 context.subscriptions.find((d) => d === disposable.d)?.dispose()
                 debugDisposables.splice(debugDisposables.indexOf(disposable), 1)
             }
@@ -213,12 +223,12 @@ export async function activate(context: vscode.ExtensionContext) {
             await config.update('enabled', true, vscode.ConfigurationTarget.Workspace)
         }),
     )
-
-    if (!vscode.workspace.getConfiguration('debug-my-code').get('enabled')) {
+	
+    if (!await vscode.workspace.getConfiguration('debug-my-code').get('enabled')) {
         return
     }
 
-    const languages = vscode.workspace.getConfiguration('debug-my-code').get('languages') as string[]
+    const languages = (await vscode.workspace.getConfiguration('debug-my-code').get('languages')) as string[]
     if (!languages || !languages.length) {
         const result = await vscode.window.showErrorMessage(
             'Please configure the languages you want to use for Debug-My-Code in your VSCode settings JSON.',
@@ -237,9 +247,9 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 
     for (const language of languages) {
-        const provider = vscode.debug.registerDebugAdapterTrackerFactory('*', {
-            createDebugAdapterTracker,
-        })
+        const provider = vscode.debug.registerDebugAdapterTrackerFactory(language, {
+			createDebugAdapterTracker,
+		})
         context.subscriptions.push(provider)
         debugDisposables.push({
             d: provider,
