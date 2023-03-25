@@ -20,8 +20,45 @@
   "contributes": {
     "commands": [
       {
-        "command": "debug-my-code.helloWorld",
-        "title": "Hello World"
+        "command": "debug-my-code.disable",
+        "title": "Debug My Code: Disable extension"
+      },
+      {
+        "command": "debug-my-code.enable",
+        "title": "Debug My Code: Enable extension"
+      },
+      {
+        "command": "debug-my-code.add-language",
+        "title": "Debug My Code: Add language"
+      },
+      {
+        "command": "debug-my-code.remove-language",
+        "title": "Debug My Code: Remove language"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "Is Debug-My-Code Config",
+        "properties": {
+          "debug-my-code.enabled": {
+            "type": "boolean",
+            "description": "Enable or disable Debug My Code"
+          },
+          "debug-my-code.languages": {
+            "type": "array",
+            "description": "Debug language. Only tested with node, but might work with any language that supports breakpoints, try your luck!"
+          },
+          "debug-my-code.exception-breakpoints": {
+            "type": "string",
+            "oneOf": [
+              "all",
+              "uncaught",
+              "none"
+            ],
+            "default": "uncaught",
+            "description": "The exception breakpoints to use. All will stop on all exceptions, uncaught will stop on uncaught exceptions, and none will not stop on exceptions."
+          }
+        }
       }
     ]
   },
