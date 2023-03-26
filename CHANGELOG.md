@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.1.1]
+
+- Bugfixes
+
 ## [1.1.0]
 
 - First breakpoint won't open the file

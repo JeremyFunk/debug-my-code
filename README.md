@@ -33,7 +33,7 @@ VSCode has multiple ways to achieve this behaviour, none of which are optimal. H
 
 This defines a [glob](https://code.visualstudio.com/docs/editor/codebasics#_advanced-search-options), that matches files that will be ignored. This has a high performance penalty in bigger repositories, [making the initial boot time significantly longer (in one of my projects from ~5s to over a 60s)](https://github.com/microsoft/vscode-js-debug/issues/1179). For every exception the glob pattern has to be matched, meaning that exception handling can't just be skipped by the debugger. [If you have a smaller number of dependencies, you might want to give it a try](https://code.visualstudio.com/docs/nodejs/nodejs-debugging#_additional-configuration).
 
-There are also edge cases where this simply does not work. Glob patterns also have some opaque limitations, that are very hard to figure out.
+There are also edge cases where this simply does not work. Glob patterns also have some opaque limitations, that are sometimes hard to figure out. I spent a lot of time trying to configure skipFiles to my needs, but it would keep jumping into files that are covered by the pattern.
 
 ## Conditional Exception Breakpoints
 
@@ -56,6 +56,21 @@ Finally, add this condition to the exception breakpoints:
 This will work similar for any other language that supports global variables. If you have other identifiers other than "I want to start debugging here" to determine which exceptions you want to handle/skip, like the location of files or file extensions, you do not need to add a global variable. Simply use that condition.
 
 Conditional Breakpoints can be used in combination with this extension, allowing you to define complex conditions without the start-up performance penalty that comes with it.
+
+# Performance comparisons
+
+Here is a list of different approaches and the performance you can expect with each one. The code was a simple for loop of 1,000,000 uncaught exceptions. This is an unrealistically high number, and is an approach that is in general not comparable to most real-world use cases, but it gives a general idea of performance characteristics of the different approaches.
+
+| Configuration                                                  | Execution Time |
+|----------------------------------------------------------------|---------------:|
+| No debugging                                                   |          1.9s  |
+| Debug enabled, no exception breakpoints                        |          3.8s  |
+| Just My Code with both caught & uncaught exceptions            |          3.8s  |
+| Debug uncaught exceptions                                      |          3.8s  |
+| Debug caught & uncaught exception with conditional breakpoints |         ~150s  |
+
+As you can see, the only viable non-manual approach of only debugging caught exceptions in your codebase introduce a huge performance penalty. 
+
 # Found an issue?
 Please create an issue on [GitHub](https://github.com/JeremyFunk/debug-my-code) or ask a question on the [extensions page](https://marketplace.visualstudio.com/items?itemName=JeremyFunk.debug-my-code).
 

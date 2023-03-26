@@ -114,14 +114,14 @@ export async function activate(context: vscode.ExtensionContext) {
                 }
             },
             async onDidSendMessage(message: any) {
-                if (message.type === 'response' && message.command === 'attach') {
+                if (message.type === 'response' && (message.command === 'attach' || message.command === 'launch')) {
                     await session.customRequest('setExceptionBreakpoints', {
                         filters: [],
                         filterOptions: [],
                     })
                 }
 
-                if (message.type === 'event' && message.event === 'stopped') {
+                if (message.type === 'event' && message.event === 'stopped' && message.body.reason === 'breakpoint') {
                     if (!debugStates[session.configuration.type][session.id].hitBreakpoint) {
                         debugStates[session.configuration.type][session.id].hitBreakpoint = true
 
