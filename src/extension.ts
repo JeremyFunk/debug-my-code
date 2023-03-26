@@ -225,7 +225,7 @@ export async function activate(context: vscode.ExtensionContext) {
             await setConfig(CNF_ENABLED, true, config)
             await setContext(CTX_ENABLED, true)
 
-			const languages = (await getSubConfig(CNF_LANGUAGES, config)) as string[]
+            const languages = (await getSubConfig(CNF_LANGUAGES, config)) as string[]
 
             for (const language of languages) {
                 const provider = vscode.debug.registerDebugAdapterTrackerFactory(language, {
