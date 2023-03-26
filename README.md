@@ -25,13 +25,6 @@ Conditional exception breakpoints allow you to make exception handling as granul
 
 Since this extension fully disables exception debugging until your code starts, you can use conditional breakpoints without the associated start-up performance penalty. 
 
-
-While running NodeJS projects, the debugger will occasionally jump into node modules when e exception breakpoint is enabled. We can change this by make the exception breakpoints conditional:
-
-![language](https://i.imgur.com/Ij9Z27w.png)
-
-
-
 # Motivation
 
 VSCode has multiple ways to achieve this behaviour, none of which are optimal. Here a brief overview in case one of these solutions suits your needs better than this extension.

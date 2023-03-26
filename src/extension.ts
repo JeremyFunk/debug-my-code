@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 interface DebuggerState {
     [language: string]: {
         [sessionId: string]: {
-            hitBreakpoints: number
+            hitBreakpoint: boolean
             exceptionBreakpoints: string[] | null
         }
     }
@@ -38,7 +38,7 @@ const setConfig = async (key: CNF, value: any, config?: vscode.WorkspaceConfigur
 }
 
 const setContext = async (key: CTX, value: any) => {
-    await vscode.commands.executeCommand('setContext', key, value)
+    return await vscode.commands.executeCommand('setContext', key, value)
 }
 
 const runCommand = async (command: CMD, args?: any) => {
@@ -51,6 +51,11 @@ interface DebugDisposables {
 }
 
 export async function activate(context: vscode.ExtensionContext) {
+    {
+        const enabled = await getSubConfig(CNF_ENABLED)
+        await setContext(CTX_ENABLED, enabled)
+    }
+
     let debugStates: DebuggerState = {}
     let debugDisposables: DebugDisposables[] = []
 
@@ -81,7 +86,7 @@ export async function activate(context: vscode.ExtensionContext) {
         return Array.from(debugTypes)
     }
 
-    async function createDebugAdapterTracker(session: vscode.DebugSession) {
+    async function createDebugAdapterTracker(session: vscode.DebugSession): Promise<vscode.DebugAdapterTracker | undefined> {
         const config = getConfig()
         const enabled = await getSubConfig(CNF_ENABLED, config)
         const languages = (await getSubConfig(CNF_LANGUAGES, config)) as string[]
@@ -95,7 +100,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }
 
         debugStates[session.configuration.type][session.id] = {
-            hitBreakpoints: 0,
+            hitBreakpoint: false,
             exceptionBreakpoints: null,
         }
 
@@ -117,8 +122,13 @@ export async function activate(context: vscode.ExtensionContext) {
                 }
 
                 if (message.type === 'event' && message.event === 'stopped') {
-                    debugStates[session.configuration.type][session.id].hitBreakpoints += 1
-                    if (debugStates[session.configuration.type][session.id].hitBreakpoints === 1) {
+                    if (!debugStates[session.configuration.type][session.id].hitBreakpoint) {
+                        debugStates[session.configuration.type][session.id].hitBreakpoint = true
+
+                        message.type = ""
+                        message.event = ""
+                        message.body = {}
+
                         await session.customRequest('setExceptionBreakpoints', {
                             filters: [],
                             filterOptions: debugStates[session.configuration.type][session.id].exceptionBreakpoints,
@@ -247,23 +257,8 @@ export async function activate(context: vscode.ExtensionContext) {
         if (!enabled) {
             return
         }
-    }
-    {
         const languages = (await getSubConfig(CNF_LANGUAGES)) as string[]
         if (!languages || !languages.length) {
-            const result = await vscode.window.showErrorMessage(
-                'Please configure the languages you want to use for Debug-My-Code in your VSCode settings JSON.',
-                'Add Language',
-                'Disable extension',
-            )
-
-            if (result === 'Add Language') {
-                await runCommand(CMD_LANGUAGE)
-            }
-
-            if (result === 'Disable extension') {
-                await runCommand(CMD_DISABLE)
-            }
             return
         }
 

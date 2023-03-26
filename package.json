@@ -2,7 +2,7 @@
   "name": "debug-my-code",
   "displayName": "Debug My Code",
   "description": "Executes only your code, skipping all previous code, without performance loss!",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "publisher": "JeremyFunk",
   "repository": {
     "url": "https://github.com/JeremyFunk/debug-my-code"
